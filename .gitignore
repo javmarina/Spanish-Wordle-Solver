@@ -1,0 +1,5 @@
+# Pickle files
+*.p
+
+# .idea workspace
+/.idea
