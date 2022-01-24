@@ -194,6 +194,7 @@ class SimulatedGame(Game):
         super(SimulatedGame, self).__init__()
         self._word = word
         self._dictionary = ListaPalabrasProvider().get_words()
+        self._rows_results = []
 
     def new_attempt(self, word: str) -> bool:
         if word not in self._dictionary:
@@ -202,19 +203,20 @@ class SimulatedGame(Game):
         word = decode(word)
         solution = decode(self._word)
 
-        display = word.upper() + ": "
+        row_result = ""
         for i, c in enumerate(word):
             if c in solution:
                 if solution[i] == c:
                     self._green(c, i)
-                    display += "🟩"
+                    row_result += "🟩"
                 else:
                     self._yellow(c, i)
-                    display += "🟨"
+                    row_result += "🟨"
             else:
                 self._black(c)
-                display += "⬛"
-        print(display)
+                row_result += "⬜"
+        print("{:s}: {:s}".format(word.upper(), row_result))
+        self._rows_results.append(row_result)
 
         correct = word == solution
         self.num_attempts += 1
@@ -223,7 +225,11 @@ class SimulatedGame(Game):
         return True
 
     def close(self) -> str:
-        return "{:d}/6".format(self.num_attempts)  # TODO: mimic Wordle output
+        result = "Wordle (ES) #0 {:d}/6".format(self.num_attempts) + os.linesep
+        for row_result in self._rows_results:
+            result += row_result + os.linesep
+        result += os.linesep + "wordle.danielfrg.com"
+        return result
 
 
 class WebGame(Game):
