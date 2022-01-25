@@ -174,8 +174,6 @@ class Game:
         if letter not in self.green:
             self.green[letter] = set()
         self.green[letter].add(idx)
-        if letter in self.yellow:
-            del self.yellow[letter]
 
     def _yellow(self, letter: str, idx: int):
         if letter not in self.yellow:
