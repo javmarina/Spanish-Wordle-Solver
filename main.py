@@ -166,8 +166,11 @@ class Game:
             self.yellow[letter] = set()
         self.yellow[letter].add(idx)
 
-    def _black(self, letter: str):
-        self.black.add(letter)
+    def _black(self, letter: str, idx: int):
+        if letter not in self.green:
+            self.black.add(letter)
+        else:
+            self._yellow(letter, idx)
 
     def close(self) -> str:
         return ""
@@ -224,7 +227,7 @@ class SimulatedGame(Game):
                     self._yellow(c, i)
                     row_result += "🟨"
             else:
-                self._black(c)
+                self._black(c, i)
                 row_result += "⬜"
         print("{:s}: {:s}".format(word.upper(), row_result))
         self._rows_results.append(row_result)
@@ -285,7 +288,7 @@ class WebGame(Game):
                 green_count += 1
             elif "bg-absent" in letter_class:
                 # black
-                self._black(letter)
+                self._black(letter, column)
             else:
                 raise ValueError("Unknown class: " + letter_class)
         return green_count == 5
