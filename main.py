@@ -347,7 +347,10 @@ def play_game(first_guesses: List[str], candidates: List[str], game_cls: Type,
 
 
 def test_words():
-    words_to_test = ["avena", "pieza", "cañón", "rubia", "razón", "robot", "fiera", "crack", "épico"]
+    words_to_test = ["coche", "nieve", "hueso", "titan", "flujo", "disco", "razon", "mural", "abril",
+                     "vejez", "falso", "cañon", "obeso", "metal", "avena", "rubia", "pieza", "cuero",
+                     "noche", "bingo", "corto", "multa", "nieto", "dieta", "mosca", "nadal", "líder",
+                     "cerco"]
 
     word_list = RaeCorpusProvider().get_words()
     word_unique = list(dict.fromkeys(word_list))
