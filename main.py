@@ -5,7 +5,7 @@ import shutil
 import time
 import zipfile
 from tkinter import Tk
-from typing import List, Type, Optional, Dict, Any
+from typing import List, Type, Optional, Dict, Any, Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -150,6 +150,9 @@ class Game:
     def is_successful(self) -> bool:
         return sum(len(val) for val in self.green.values()) == 5
 
+    def get_solution(self) -> str:
+        pass
+
     def _finish(self):
         self.finished = True
 
@@ -205,6 +208,9 @@ class SimulatedGame(Game):
             self._finish()
         return True
 
+    def get_solution(self) -> str:
+        return self._word
+
     def close(self) -> str:
         result = "Wordle (ES) #0 {:s}/6".format(str(self.num_attempts) if self.is_successful() else "X") + os.linesep
         for row_result in self._rows_results:
@@ -217,6 +223,7 @@ class WebGame(Game):
     def __init__(self):
         super(WebGame, self).__init__()
         self._browser = None
+        self._solution = None
 
     def play(self):
         s = Service(ChromeDriverManager().install())
@@ -277,9 +284,18 @@ class WebGame(Game):
         except NoSuchElementException:
             correct = self._update_result(self.num_attempts)
             self.num_attempts += 1
-            if correct or self.num_attempts >= 6:
+            if correct:
+                self._solution = word
+                self._finish()
+            if self.num_attempts >= 6:
+                time.sleep(2)
+                span = self._browser.find_element(By.XPATH, "//span[contains(@class, 'uppercase tracking-wide')]")
+                self._solution = span.text.lower()
                 self._finish()
             return True
+
+    def get_solution(self) -> Optional[str]:
+        return self._solution
 
     def close(self) -> str:
         time.sleep(2)
@@ -343,7 +359,8 @@ def play_game(first_guesses: List[str], candidates: List[str], game_cls: Type,
 
     # Finished
     result = game.close()
-    return result
+    solution = game.get_solution()
+    return result, solution
 
 
 def test_words():
@@ -359,8 +376,8 @@ def test_words():
     candidates = list(word_unique)
 
     for word in words_to_test:
-        print("Solución:", word)
-        result = play_game(words_sorted_by_vowels, candidates, SimulatedGame, kwargs={"word": word})
+        print("Solution:", word)
+        result, solution = play_game(words_sorted_by_vowels, candidates, SimulatedGame, kwargs={"word": word})
         print(result)
         print()
 
@@ -371,8 +388,9 @@ def run_bot():
     words_sorted_by_vowels = sorted(word_list, key=lambda w: number_vowels(w), reverse=True)
     candidates = list(word_unique)
 
-    result = play_game(words_sorted_by_vowels, candidates, WebGame)
+    result, solution = play_game(words_sorted_by_vowels, candidates, WebGame)
     print(result)
+    print("Solution is:", solution)
 
 
 if __name__ == '__main__':
