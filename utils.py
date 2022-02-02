@@ -41,14 +41,23 @@ def decode(word: str) -> str:
             .replace("ü", "u"))
 
 
-def number_vowels(word: str) -> int:
+def is_vowel(c: str) -> bool:
+    assert len(c) == 1
+    c = decode(c)
     vowels = ["a", "e", "i", "o", "u"]
+    return c in vowels
+
+
+def number_vowels(word: str, unique: bool = True) -> int:
+    vowels_found = []
     word = decode(word)
-    count = 0
-    for vowel in vowels:
-        if vowel in word:
-            count += 1
-    return count
+    for c in word:
+        if is_vowel(c):
+            vowels_found.append(c)
+    if unique:
+        return len(set(vowels_found))
+    else:
+        return len(vowels_found)
 
 
 def word_scoring(word: str, weights: Dict[str, float], allow_duplicates: bool = False) -> float:
