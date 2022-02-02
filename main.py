@@ -299,7 +299,10 @@ class WebGame(Game):
 
     def close(self) -> str:
         time.sleep(2)
-        self._browser.find_element(By.XPATH, "//button[contains(., 'Compartir')]").click()
+        if self.is_successful():
+            self._browser.find_element(By.XPATH, "//button[contains(., 'Compartir')]").click()
+        else:
+            self._browser.find_element(By.XPATH, "//button[contains(., 'Copiar resultado')]").click()
         self._browser.close()
         return Tk().clipboard_get()
 
