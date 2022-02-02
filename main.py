@@ -172,6 +172,33 @@ class Game:
     def close(self) -> str:
         return ""
 
+    def filter_candidates(self, candidates: List[str]) -> List[str]:
+        for letter, must_indices in self.green.items():
+            def filter_condition(word: str):
+                word = decode(word)
+                for idx in must_indices:
+                    if word[idx] != letter:
+                        return False
+                return True
+
+            candidates = [word for word in candidates if filter_condition(word)]
+
+        for letter in self.black:
+            candidates = [word for word in candidates if letter not in decode(word)]
+
+        for letter, prohibited_indices in self.yellow.items():
+            def filter_condition(word: str):
+                word = decode(word)
+                if letter not in word:
+                    return False
+                for idx in prohibited_indices:
+                    if word[idx] == letter:
+                        return False
+                return True
+
+            candidates = [word for word in candidates if filter_condition(word)]
+        return candidates
+
 
 class SimulatedGame(Game):
     def __init__(self, word: str):
@@ -304,8 +331,38 @@ class WebGame(Game):
         return Tk().clipboard_get()
 
 
-def play_game(first_guesses: List[str], candidates: List[str], game_cls: Type,
-              args: Optional[List[Any]] = None, kwargs: Optional[Dict[str, Any]] = None):
+class Strategy:
+    def get_word(self, game: Game, num_attempts: int) -> str:
+        pass
+
+    def reset(self):
+        pass
+
+
+class DefaultStrategy(Strategy):
+    def __init__(self):
+        self.reset()
+
+    def get_word(self, game: Game, num_attempts: int) -> str:
+        if num_attempts == 0:
+            word = self._words_sorted_by_vowels.pop(0)
+        else:
+            filtered = game.filter_candidates(self._word_sorted_by_freq)
+            word = filtered.pop(0)
+            self._word_sorted_by_freq.remove(word)
+        return word
+
+    # noinspection PyAttributeOutsideInit
+    def reset(self):
+        word_list = RaeCorpusProvider().get_words()
+        self._word_unique = list(dict.fromkeys(word_list))
+
+        self._words_sorted_by_vowels = sorted(word_list, key=lambda w: number_vowels(w), reverse=True)
+        self._word_sorted_by_freq = list(self._word_unique)
+
+
+def play_game(strategy: Strategy, game_cls: Type, args: Optional[List[Any]] = None,
+              kwargs: Optional[Dict[str, Any]] = None) -> Tuple[str, str]:
     if args is None:
         args = []
     if kwargs is None:
@@ -315,13 +372,9 @@ def play_game(first_guesses: List[str], candidates: List[str], game_cls: Type,
     game.play()
 
     while True:
-        first = game.num_attempts == 0
-        accepted = game.new_attempt(first_guesses[0] if first else candidates[0])
+        word = strategy.get_word(game, game.num_attempts)
+        accepted = game.new_attempt(word)
         if not accepted:
-            if first:
-                del first_guesses[0]
-            else:
-                del candidates[0]
             continue
 
         if game.is_finished():
@@ -331,68 +384,46 @@ def play_game(first_guesses: List[str], candidates: List[str], game_cls: Type,
                 print("NOOOOOOOOOOOOOOOOO")
             break
 
-        # Game goes on, update candidates
-        for letter, must_indices in game.green.items():
-            def filter_condition(word: str):
-                word = decode(word)
-                for idx in must_indices:
-                    if word[idx] != letter:
-                        return False
-                return True
-
-            candidates = [word for word in candidates if filter_condition(word)]
-
-        for letter in game.black:
-            candidates = [word for word in candidates if letter not in decode(word)]
-
-        for letter, prohibited_indices in game.yellow.items():
-            def filter_condition(word: str):
-                word = decode(word)
-                if letter not in word:
-                    return False
-                for idx in prohibited_indices:
-                    if word[idx] == letter:
-                        return False
-                return True
-
-            candidates = [word for word in candidates if filter_condition(word)]
-
     # Finished
+    strategy.reset()
     result = game.close()
     solution = game.get_solution()
     return result, solution
 
 
-def test_words():
+def test_words(strategy: Strategy):
     words_to_test = ["coche", "nieve", "hueso", "titan", "flujo", "disco", "razon", "mural", "abril",
                      "vejez", "falso", "cañon", "obeso", "metal", "avena", "rubia", "pieza", "cuero",
                      "noche", "bingo", "corto", "multa", "nieto", "dieta", "mosca", "nadal", "líder",
                      "cerco"]
 
-    word_list = RaeCorpusProvider().get_words()
-    word_unique = list(dict.fromkeys(word_list))
-
-    words_sorted_by_vowels = sorted(word_list, key=lambda w: number_vowels(w), reverse=True)
-    candidates = list(word_unique)
+    all_attempts = []
 
     for word in words_to_test:
         print("Solution:", word)
-        result, solution = play_game(words_sorted_by_vowels, candidates, SimulatedGame, kwargs={"word": word})
+        result, solution = play_game(strategy, SimulatedGame, kwargs={"word": word})
         print(result)
-        print()
+
+        attempts = result.splitlines()[0][-3]
+        if attempts == "X":
+            attempts = 7  # TODO
+        all_attempts.append(int(attempts))
+
+    mean_attempts = sum(all_attempts) / len(all_attempts)
+    print("Average number of attempts:", mean_attempts)
 
 
-def run_bot():
-    word_list = RaeCorpusProvider().get_words()
-    word_unique = list(dict.fromkeys(word_list))
-    words_sorted_by_vowels = sorted(word_list, key=lambda w: number_vowels(w), reverse=True)
-    candidates = list(word_unique)
-
-    result, solution = play_game(words_sorted_by_vowels, candidates, WebGame)
+def run_bot(strategy: Strategy):
+    result, solution = play_game(strategy, WebGame)
     print(result)
     print("Solution is:", solution)
 
 
+def main():
+    strategy = DefaultStrategy()
+    test_words(strategy)
+    # run_bot(strategy)
+
+
 if __name__ == '__main__':
-    test_words()
-    run_bot()
+    main()
