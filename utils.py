@@ -31,6 +31,11 @@ weights = {
     "z": 0.0052,
 }
 
+wordle_past_words = ["coche", "nieve", "hueso", "titan", "flujo", "disco", "razon", "mural", "abril",
+                     "vejez", "falso", "cañon", "obeso", "metal", "avena", "rubia", "pieza", "cuero",
+                     "noche", "bingo", "corto", "multa", "nieto", "dieta", "mosca", "nadal", "líder",
+                     "cerco"]
+
 
 def decode(word: str) -> str:
     return (word.replace("á", "a")

@@ -16,7 +16,7 @@ from selenium.webdriver.common.by import By
 from tqdm import tqdm
 from webdriver_manager.chrome import ChromeDriverManager
 
-from utils import decode, word_scoring, weights, number_vowels
+from utils import decode, word_scoring, weights, number_vowels, wordle_past_words
 
 
 class WordProvider:
@@ -394,15 +394,13 @@ def play_game(strategy: Strategy, game_cls: Type, args: Optional[List[Any]] = No
     return result, solution
 
 
-def test_words(strategy: Strategy):
-    words_to_test = ["coche", "nieve", "hueso", "titan", "flujo", "disco", "razon", "mural", "abril",
-                     "vejez", "falso", "cañon", "obeso", "metal", "avena", "rubia", "pieza", "cuero",
-                     "noche", "bingo", "corto", "multa", "nieto", "dieta", "mosca", "nadal", "líder",
-                     "cerco"]
+def test_strategy(strategy: Strategy, words: Optional[List[str]] = None) -> float:
+    if words is None:
+        words = list(wordle_past_words)
 
     all_attempts = []
 
-    for word in words_to_test:
+    for word in words:
         print("Solution:", word)
         result, solution = play_game(strategy, SimulatedGame, kwargs={"word": word})
         print(result)
@@ -414,6 +412,18 @@ def test_words(strategy: Strategy):
 
     mean_attempts = sum(all_attempts) / len(all_attempts)
     print("Average number of attempts:", mean_attempts)
+    return mean_attempts
+
+
+def test_strategies(strategies: List[Strategy], words: Optional[List[str]] = None):
+    results = {}
+    for strategy in strategies:
+        mean_attempts = test_strategy(strategy, words)
+        results[type(strategy).__name__] = mean_attempts
+
+    print(results)
+    best_strategy = min(results, key=results.get)
+    print("Best strategy is", best_strategy)
 
 
 def run_bot(strategy: Strategy):
@@ -424,7 +434,7 @@ def run_bot(strategy: Strategy):
 
 def main():
     strategy = DefaultStrategy()
-    test_words(strategy)
+    test_strategies([strategy])
     # run_bot(strategy)
 
 
