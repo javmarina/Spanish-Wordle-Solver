@@ -234,7 +234,7 @@ class SimulatedGame(Game):
         return True
 
     def close(self) -> str:
-        result = "Wordle (ES) #0 {:d}/6".format(self.num_attempts) + os.linesep
+        result = "Wordle (ES) #0 {:s}/6".format(str(self.num_attempts) if self.is_successful() else "X") + os.linesep
         for row_result in self._rows_results:
             result += row_result + os.linesep
         result += os.linesep + "wordle.danielfrg.com"
