@@ -264,7 +264,7 @@ class WebGame(Game):
 
         time.sleep(1)
 
-        self._browser.find_element(By.XPATH, "//button[contains(., 'Jugar!')]").click()
+        self._browser.find_element(By.XPATH, "//button[contains(., '¡Jugar!')]").click()
 
         time.sleep(0.5)
 
